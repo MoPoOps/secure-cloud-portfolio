@@ -1,0 +1,36 @@
+name: Deploy to S3
+
+# 1. THE TRIGGER: When does the robot wake up?
+# Why: We tell it to only run when you "push" (upload) code to the "main" branch.
+on:
+  push:
+    branches:
+      - main
+
+# 2. THE PERMISSIONS: What can the robot ask for?
+# Why: It needs 'id-token: write' to ask GitHub for the OIDC security badge we set up in Phase 1.
+permissions:
+  id-token: write
+  contents: read
+
+# 3. THE JOBS: What exactly does the robot do?
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # The robot turns on a temporary Linux computer
+    steps:
+      # Step A: Download your code onto the temporary computer
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step B: Log into AWS using the OIDC bridge and the Role VIP Pass
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::519008639700:role/GitHubActions-S3-Deploy-Role # HERE IS THE ARN CODE I TOOK FROM AWS
+          aws-region: eu-south-1 # Remember to change this if the S3 bucket changed to a different region!
+
+      # Step C: The actual deployment command.
+      # Why: 'aws s3 sync' looks at the files, sees what changed, and copies only the new stuff to your bucket.
+      # We use '--exclude' so it doesn't upload the hidden git history files.
+      - name: Sync files to S3
+        run: aws s3 sync . s3://secure-portfolio-milano-2026-519008639700-eu-south-1-an --delete --exclude ".git/*" --exclude ".github/*"
