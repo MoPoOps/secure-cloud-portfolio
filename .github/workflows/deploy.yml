@@ -34,3 +34,6 @@ jobs:
       # We use '--exclude' so it doesn't upload the hidden git history files.
       - name: Sync files to S3
         run: aws s3 sync . s3://secure-portfolio-milano-2026-519008639700-eu-south-1-an --delete --exclude ".git/*" --exclude ".github/*"
+        # THIS IS THE NEW STEP FOR THE CLOUDFRONT TO UPDATE AUTOMATICALLY!
+      - name: Invalidate CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id EUJEGZIHBD4RF --paths "/*"
